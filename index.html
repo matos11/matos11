@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dani Bingo</title>
+  <style>
+    :root {
+      --bg-main: #1a1a1a;
+      --bg-panel: #2d2d2d;
+      --bg-panel-darker: #242424;
+      --border-color: #404040;
+      --text-light: #ffffff;
+      --text-dark: #1a1a1a;
+      --text-grey: #b0b0b0;
+      
+      /* BINGO Letter Colors */
+      --b-col: #00a1e3;
+      --i-col: #ff00ff;
+      --n-col: #ffff00;
+      --g-col: #00ff00;
+      --o-col: #ff8c00;
+
+      /* Highlight Colors */
+      --highlight-yellow: #fddc00;
+      --highlight-red: #dc3545;
+      --highlight-green: #28a745;
+      --highlight-blue: #007bff;
+      --highlight-purple: #6f42c1;
+      --accent-gold: #ffd700;
+    }
+
+    /* Animations */
+    @keyframes popInCircle {
+      0% {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+      60% {
+        transform: scale(1.1);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes slideInRect {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 20px var(--highlight-green); }
+      50% { transform: scale(1.05); box-shadow: 0 0 30px var(--highlight-green); }
+      100% { transform: scale(1); box-shadow: 0 0 20px var(--highlight-green); }
+    }
+
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 15px var(--accent-gold); }
+      50% { box-shadow: 0 0 25px var(--accent-gold), 0 0 35px var(--accent-gold); }
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      background: linear-gradient(135deg, var(--bg-main) 0%, #2a2a2a 100%);
+      color: var(--text-light);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.4;
+    }
+
+    /* Main Layout Container */
+    .game-container {
+      display: grid;
+      grid-template-columns: 300px 1fr 280px;
+      grid-template-rows: auto 1fr auto;
+      min-height: 100vh;
+      gap: 15px;
+      padding: 15px;
+      grid-template-areas:
+        "header header header"
+        "sidebar main-content info-panel"
+        "footer footer footer";
+    }
+
+    /* Header Section */
+    .header-section {
+      grid-area: header;
+      background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-panel-darker) 100%);
+      border-radius: 15px;
+      padding: 20px;
+      border: 2px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .logo-kb {
+      background: linear-gradient(135deg, var(--highlight-red) 0%, #a00000 100%);
+      color: white;
+      padding: 15px 25px;
+      border-radius: 12px;
+      font-size: 24px;
+      font-weight: bold;
+      text-align: center;
+      line-height: 1;
+      box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+      animation: glow 2s infinite alternate;
+    }
+
+    .game-title {
+      font-size: 32px;
+      font-weight: bold;
+      background: linear-gradient(135deg, var(--accent-gold) 0%, #ffed4e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .current-ball-display {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .current-number-display {
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle at center, var(--highlight-green) 0%, #1e7e34 100%);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 48px;
+      font-weight: bold;
+      border: 4px solid white;
+      animation: pulse 1.5s infinite;
+      box-shadow: 0 0 20px var(--highlight-green);
+    }
+
+    .draw-info {
+      text-align: center;
+    }
+
+    .draw-count {
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--accent-gold);
+      margin-bottom: 5px;
+    }
+
+    .draw-label {
+      font-size: 14px;
+      color: var(--text-grey);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      grid-area: sidebar;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .ball-cage-section,
+    .history-section {
+      background: var(--bg-panel);
+      border-radius: 15px;
+      padding: 20px;
+      border: 2px solid var(--border-color);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .ball-cage-section {
+      text-align: center;
+      flex: 0 0 auto;
+    }
+
+    .ball-cage-section img {
+      max-width: 100%;
+      height: 200px;
+      object-fit: contain;
+      border-radius: 10px;
+    }
+
+    .history-section {
+      flex: 1;
+    }
+
+    .history-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--accent-gold);
+      margin-bottom: 15px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .called-history {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+      gap: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      aspect-ratio: 1;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      border: 2px solid white;
+      animation: slideInRect 0.4s ease-out forwards;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .history-item.blue { background: linear-gradient(135deg, var(--highlight-blue) 0%, #0056b3 100%); }
+    .history-item.green { background: linear-gradient(135deg, var(--highlight-green) 0%, #1e7e34 100%); }
+    .history-item.red { background: linear-gradient(135deg, var(--highlight-red) 0%, #a71d2a 100%); }
+    .history-item.purple { background: linear-gradient(135deg, var(--highlight-purple) 0%, #4c2a85 100%); }
+
+    /* Main Content: Bingo Grid */
+    .main-content {
+      grid-area: main-content;
+      background: var(--bg-panel);
+      border-radius: 15px;
+      padding: 25px;
+      border: 2px solid var(--border-color);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .bingo-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      grid-template-rows: auto repeat(15, 1fr);
+      gap: 8px;
+      max-width: 600px;
+      width: 100%;
+      aspect-ratio: 1;
+    }
+
+    .bingo-letter {
+      grid-row: 1;
+      font-size: 36px;
+      font-weight: bold;
+      color: var(--text-light);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 10px;
+      height: 60px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .b-letter { background: linear-gradient(135deg, var(--b-col) 0%, #0081b3 100%); }
+    .i-letter { background: linear-gradient(135deg, var(--i-col) 0%, #cc00cc 100%); }
+    .n-letter { background: linear-gradient(135deg, var(--n-col) 0%, #cccc00 100%); color: var(--text-dark); }
+    .g-letter { background: linear-gradient(135deg, var(--g-col) 0%, #00cc00 100%); color: var(--text-dark); }
+    .o-letter { background: linear-gradient(135deg, var(--o-col) 0%, #cc6600 100%); }
+
+    .number-cell {
+      background: var(--bg-panel-darker);
+      color: var(--text-grey);
+      font-size: 18px;
+      font-weight: bold;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .number-cell:hover {
+      background: var(--border-color);
+      transform: scale(1.05);
+    }
+
+    .number-cell.active {
+      background: linear-gradient(135deg, var(--highlight-yellow) 0%, #e6c200 100%);
+      color: var(--text-dark);
+      border-radius: 50%;
+      box-shadow: 0 0 20px var(--highlight-yellow);
+      animation: popInCircle 0.5s ease-out;
+      transform: scale(1.1);
+    }
+
+    /* Info Panel */
+    .info-panel {
+      grid-area: info-panel;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .prize-section,
+    .bingo-animation {
+      background: linear-gradient(135deg, #0050e1 0%, #003bb5 100%);
+      border-radius: 15px;
+      padding: 20px;
+      color: white;
+      box-shadow: 0 4px 15px rgba(0, 80, 225, 0.3);
+    }
+
+    .prize-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .prize-contact {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .prize-contact-header {
+      font-size: 14px;
+      color: var(--accent-gold);
+      margin-bottom: 8px;
+    }
+
+    .prize-phone {
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+    }
+
+    .prize-list {
+      margin-bottom: 20px;
+    }
+
+    .prize-header {
+      font-size: 16px;
+      color: var(--accent-gold);
+      margin-bottom: 10px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .prize-list div:not(.prize-header) {
+      font-size: 16px;
+      margin-bottom: 8px;
+      padding: 8px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 5px;
+    }
+
+    .winner-box {
+      background: linear-gradient(135deg, #003695 0%, #002570 100%);
+      border-radius: 10px;
+      padding: 15px;
+      text-align: center;
+      border: 2px solid var(--accent-gold);
+    }
+
+    .winner-title {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .winner-amount {
+      font-size: 32px;
+      font-weight: bold;
+      color: var(--accent-gold);
+    }
+
+    .bingo-animation {
+      flex: 0 0 auto;
+      text-align: center;
+      padding: 15px;
+    }
+
+    .bingo-animation img {
+      max-width: 100%;
+      height: 150px;
+      object-fit: contain;
+      border-radius: 10px;
+    }
+
+    /* Footer Controls */
+    .footer-section {
+      grid-area: footer;
+      background: var(--bg-panel);
+      border-radius: 15px;
+      padding: 20px;
+      border: 2px solid var(--border-color);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .footer-controls {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .footer-btn {
+      padding: 12px 24px;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .footer-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .footer-btn.play {
+      background: linear-gradient(135deg, var(--highlight-green) 0%, #1e7e34 100%);
+      color: white;
+    }
+
+    .footer-btn.new-game {
+      background: linear-gradient(135deg, var(--highlight-red) 0%, #a71d2a 100%);
+      color: white;
+    }
+
+    .footer-btn:not(.play):not(.new-game) {
+      background: linear-gradient(135deg, var(--highlight-blue) 0%, #0056b3 100%);
+      color: white;
+    }
+
+    #speedControl {
+      background: var(--bg-panel-darker);
+      color: white;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .pattern-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 200px;
+    }
+
+    .pattern-controls input {
+      padding: 10px;
+      border-radius: 8px;
+      border: 2px solid var(--border-color);
+      background: white;
+      color: var(--text-dark);
+      font-size: 14px;
+    }
+
+    .pattern-check-btns {
+      display: flex;
+      gap: 8px;
+    }
+
+    .pattern-check-btns button {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .pattern-check-btns .manual {
+      background: linear-gradient(135deg, var(--highlight-blue) 0%, #0056b3 100%);
+      color: white;
+    }
+
+    .pattern-check-btns .auto {
+      background: linear-gradient(135deg, var(--highlight-green) 0%, #1e7e34 100%);
+      color: white;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1400px) {
+      .game-container {
+        grid-template-columns: 250px 1fr 250px;
+      }
+      
+      .current-number-display {
+        width: 100px;
+        height: 100px;
+        font-size: 36px;
+      }
+    }
+
+    @media (max-width: 1200px) {
+      .game-container {
+        grid-template-columns: 200px 1fr 220px;
+      }
+      
+      .game-title {
+        font-size: 24px;
+      }
+      
+      .bingo-letter {
+        font-size: 28px;
+        height: 50px;
+      }
+      
+      .number-cell {
+        font-size: 16px;
+      }
+    }
+
+    @media (max-width: 992px) {
+      .game-container {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "header"
+          "main-content"
+          "sidebar"
+          "info-panel"
+          "footer";
+        gap: 15px;
+      }
+      
+      .header-section {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+      }
+      
+      .current-ball-display {
+        justify-content: center;
+      }
+      
+      .sidebar {
+        flex-direction: row;
+        gap: 15px;
+      }
+      
+      .ball-cage-section,
+      .history-section {
+        flex: 1;
+      }
+      
+      .info-panel {
+        flex-direction: row;
+        gap: 15px;
+      }
+      
+      .prize-section,
+      .bingo-animation {
+        flex: 1;
+      }
+      
+      .footer-section {
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      .footer-controls {
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .game-container {
+        padding: 10px;
+        gap: 10px;
+      }
+      
+      .logo-section {
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      .game-title {
+        font-size: 20px;
+      }
+      
+      .current-number-display {
+        width: 80px;
+        height: 80px;
+        font-size: 28px;
+      }
+      
+      .bingo-grid {
+        gap: 4px;
+      }
+      
+      .bingo-letter {
+        font-size: 20px;
+        height: 40px;
+      }
+      
+      .number-cell {
+        font-size: 14px;
+      }
+      
+      .sidebar,
+      .info-panel {
+        flex-direction: column;
+      }
+      
+      .footer-controls {
+        flex-direction: column;
+        width: 100%;
+      }
+      
+      .pattern-controls {
+        width: 100%;
+      }
+      
+      .called-history {
+        grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+      }
+      
+      .history-item {
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header-section {
+        padding: 15px;
+      }
+      
+      .main-content {
+        padding: 15px;
+      }
+      
+      .bingo-letter {
+        font-size: 16px;
+        height: 35px;
+      }
+      
+      .number-cell {
+        font-size: 12px;
+      }
+      
+      .footer-btn {
+        padding: 10px 20px;
+        font-size: 14px;
+      }
+      
+      .draw-count {
+        font-size: 20px;
+      }
+      
+      .logo-kb {
+        font-size: 18px;
+        padding: 10px 15px;
+      }
+    }
+
+    /* Custom Scrollbar */
+    .called-history::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .called-history::-webkit-scrollbar-track {
+      background: var(--bg-panel-darker);
+      border-radius: 3px;
+    }
+
+    .called-history::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
+
+    .called-history::-webkit-scrollbar-thumb:hover {
+      background: var(--text-grey);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-container">
+    <!-- Header Section -->
+    <div class="header-section">
+      <div class="logo-section">
+        <div class="logo-kb">YDM<br>BINGO</div>
+        <div class="game-title">Dani Bingo Game</div>
+      </div>
+      
+      <div class="current-ball-display">
+        <div class="current-number-display" id="currentNumber">?</div>
+        <div class="draw-info">
+          <div class="draw-count" id="drawCount">0/75</div>
+          <div class="draw-label">Numbers Called</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="ball-cage-section">
+        <img src="spin.gif" alt="Bingo Ball Cage">
+      </div>
+      
+      <div class="history-section">
+        <div class="history-title">Recent Numbers</div>
+        <div class="called-history" id="selectedNumbers"></div>
+      </div>
+    </div>
+
+    <!-- Main Bingo Grid -->
+    <div class="main-content">
+      <div class="bingo-grid" id="gridContainer"></div>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="info-panel">
+      <div class="prize-section">
+        <div class="prize-contact">
+          <div class="prize-contact-header">ለበለጠ መረጃ በእጅ ስልክ ይደውሉ</div>
+          <div class="prize-phone">0979652325</div>
+        </div>
+        
+        <div class="prize-list">
+          <div class="prize-header">የሽልማት ዝርዝር</div>
+          <div>4 መስመር 3,000 ብር</div>
+          <div>5 መስመር 500 ብር</div>
+        </div>
+        
+        <div class="winner-box">
+          <div class="winner-title">አሸናፊ</div>
+          <div class="winner-amount">20 ብር</div>
+        </div>
+      </div>
+      
+      <div class="bingo-animation">
+        <img src="bingo.gif" alt="Bingo Animation">
+      </div>
+    </div>
+
+    <!-- Footer Controls -->
+    <div class="footer-section">
+      <div class="footer-controls">
+        <button class="footer-btn">Bewz</button>
+        <button class="footer-btn play" id="playBtn" onclick="startOrStopDraw()">Play</button>
+        <select class="footer-btn">
+          <option>amaha</option>
+        </select>
+        
+        <label for="speedControl" style="color: var(--text-grey);">Speed:</label>
+        <select id="speedControl" onchange="updatePlaybackRate()">
+          <option value="2">0.5x</option>
+          <option value="1.33">0.75x</option>
+          <option value="1" selected>1x</option>
+          <option value="0.8">1.25x</option>
+          <option value="0.66">1.5x</option>
+          <option value="0.5">2x</option>
+        </select>
+        
+        <button class="footer-btn">Pattern</button>
+        <button class="footer-btn new-game" onclick="resetGame()">NEW GAME</button>
+      </div>
+      
+      <div class="pattern-controls">
+        <input type="text" placeholder="Insert Card No">
+        <div class="pattern-check-btns">
+          <button class="manual">Manual Check</button>
+          <button class="auto">Auto Check</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // Game state variables
+  const gridContainer = document.getElementById("gridContainer");
+  const drawCountEl = document.getElementById("drawCount");
+  const playBtn = document.getElementById("playBtn");
+  const currentNumberEl = document.getElementById("currentNumber");
+  const selectedNumbersEl = document.getElementById("selectedNumbers");
+  const speedControl = document.getElementById("speedControl");
+
+  let drawnNumbers = [];
+  let allNumbers = Array.from({ length: 75 }, (_, i) => i + 1);
+  let drawInterval = null;
+  let isDrawing = false;
+  let playbackSpeed = 1; 
+  let audioCache = {};
+
+  function initGame() {
+    createGrid();
+    preloadAudioFiles();
+  }
+
+  function createGrid() {
+    gridContainer.innerHTML = '';
+    const letters = [
+      { letter: 'B', class: 'b-letter', col: 1 },
+      { letter: 'I', class: 'i-letter', col: 2 },
+      { letter: 'N', class: 'n-letter', col: 3 },
+      { letter: 'G', class: 'g-letter', col: 4 },
+      { letter: 'O', class: 'o-letter', col: 5 }
+    ];
+
+    // Create header row
+    letters.forEach((letterInfo) => {
+      const letterCell = document.createElement("div");
+      letterCell.className = `bingo-letter ${letterInfo.class}`;
+      letterCell.textContent = letterInfo.letter;
+      letterCell.style.gridColumn = letterInfo.col + 1;
+      letterCell.style.gridRow = 1;
+      gridContainer.appendChild(letterCell);
+    });
+
+    // Create number cells
+    letters.forEach((letterInfo, colIndex) => {
+      const startNum = (colIndex * 15) + 1;
+      for (let i = 0; i < 15; i++) {
+        const number = startNum + i;
+        const cell = document.createElement("div");
+        cell.className = "number-cell";
+        cell.textContent = number;
+        cell.id = `cell-${number}`;
+        cell.style.gridColumn = letterInfo.col + 1;
+        cell.style.gridRow = i + 2;
+        gridContainer.appendChild(cell);
+      }
+    });
+  }
+
+  function drawBall() {
+    if (allNumbers.length === 0) {
+      stopDraw();
+      alert("All numbers have been drawn!");
+      return;
+    }
+    const index = Math.floor(Math.random() * allNumbers.length);
+    const number = allNumbers.splice(index, 1)[0];
+    drawnNumbers.push(number);
+
+    drawCountEl.textContent = `${drawnNumbers.length}/75`;
+    currentNumberEl.textContent = number;
+
+    const cell = document.getElementById(`cell-${number}`);
+    if (cell) {
+      cell.classList.add("active");
+    }
+
+    updateSelectedNumbers();
+    speakAmharic(number);
+  }
+  
+  function updateSelectedNumbers() {
+    selectedNumbersEl.innerHTML = '';
+    const lastNumbers = drawnNumbers.slice(-12).reverse(); // Show more numbers
+    const colors = ['red', 'green', 'blue', 'purple']; 
+
+    lastNumbers.forEach((num, index) => {
+      const box = document.createElement("div");
+      box.className = `history-item ${colors[index % colors.length]}`;
+      box.style.animationDelay = `${index * 0.05}s`;
+      box.textContent = num;
+      selectedNumbersEl.appendChild(box);
+    });
+  }
+  
+  function startDraw() {
+    if (allNumbers.length === 0) { resetGame(); }
+    const intervalTime = 4000 * playbackSpeed;
+    playAudio('sounds/play.mp3');
+    drawBall();
+    drawInterval = setInterval(drawBall, intervalTime);
+    playBtn.textContent = 'Stop';
+    playBtn.style.background = 'linear-gradient(135deg, var(--highlight-red) 0%, #a71d2a 100%)';
+    isDrawing = true;
+  }
+  
+  function stopDraw() {
+     if (drawInterval) {
+        clearInterval(drawInterval);
+        drawInterval = null;
+        playAudio('sounds/stop.mp3');
+     }
+     playBtn.textContent = 'Play';
+     playBtn.style.background = 'linear-gradient(135deg, var(--highlight-green) 0%, #1e7e34 100%)';
+     isDrawing = false;
+  }
+
+  function startOrStopDraw() {
+      if (isDrawing) {
+          stopDraw();
+      } else {
+          startDraw();
+      }
+  }
+
+  function resetGame() {
+    stopDraw();
+    allNumbers = Array.from({ length: 75 }, (_, i) => i + 1);
+    drawnNumbers = [];
+    drawCountEl.textContent = "0/75";
+    currentNumberEl.textContent = "?";
+    selectedNumbersEl.innerHTML = '';
+    document.querySelectorAll('.number-cell').forEach(cell => {
+      cell.classList.remove("active");
+    });
+    playBtn.textContent = 'Play';
+    playBtn.style.background = 'linear-gradient(135deg, var(--highlight-green) 0%, #1e7e34 100%)';
+    isDrawing = false;
+  }
+
+  function updatePlaybackRate() {
+    playbackSpeed = parseFloat(speedControl.value);
+    if (isDrawing) {
+        stopDraw();
+        startDraw();
+    }
+  }
+
+  // --- SOUND FUNCTIONS ---
+  function getLetterForNumber(num) {
+    if (num <= 15) return "B"; 
+    if (num <= 30) return "I";
+    if (num <= 45) return "N"; 
+    if (num <= 60) return "G";
+    if (num <= 75) return "O"; 
+    return "";
+  }
+  
+  function preloadAudioFiles() {
+    const filesToLoad = ['B', 'I', 'N', 'G', 'O', 'play', 'stop'];
+    filesToLoad.forEach(file => {
+      const audio = new Audio(`sounds/${file}.mp3`);
+      audio.load();
+      audioCache[file] = audio;
+    });
+    for (let i = 1; i <= 75; i++) {
+      const audio = new Audio(`sounds/${i}.mp3`);
+      audio.load();
+      audioCache[i] = audio;
+    }
+  }
+  
+  function playAudio(src) {
+    return new Promise((resolve) => {
+      const key = src.replace('sounds/', '').replace('.mp3', '');
+      const audio = audioCache[key] || new Audio(src);
+      const isControlSound = key === 'play' || key === 'stop';
+      audio.playbackRate = isControlSound ? 1 : (1 / playbackSpeed);
+      audio.onended = resolve;
+      audio.onerror = (e) => {
+        console.error(`Could not play sound: ${src}`, e);
+        resolve(e);
+      };
+      audio.currentTime = 0; 
+      const playPromise = audio.play();
+      if (playPromise) {
+        playPromise.catch(e => {
+          console.error(`Audio play failed for ${src}:`, e);
+          resolve(e);
+        });
+      }
+    });
+  }
+
+  async function speakAmharic(number) {
+    const letter = getLetterForNumber(number);
+    try {
+      await playAudio(`sounds/${letter}.mp3`);
+      await new Promise(resolve => setTimeout(resolve, 150 * playbackSpeed));
+      await playAudio(`sounds/${number}.mp3`);
+    } catch (error) {
+      console.error("Error in speaking sequence:", error);
+    }
+  }
+
+  // Initialize game when page loads
+  window.addEventListener('load', initGame);
+</script>
+
+</body>
+</html>
